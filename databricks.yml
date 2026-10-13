@@ -1,0 +1,76 @@
+# Databricks Asset Bundle for the stock market pipeline.
+#
+# Rule: this file is the ONLY place a catalog name appears. Code in src/ never hardcodes a catalog
+# and never discovers one from an environment variable. The value flows in one direction:
+#
+#     target -> var.catalog -> job parameter -> code
+#
+# One hardcoded catalog in a notebook is all it takes for a dev run to write into prod, and every
+# target here shares a single Free Edition workspace, so that mistake would not even need the
+# wrong credentials to happen.
+
+bundle:
+  name: stock_market_pipeline
+
+# All three targets live in the same Free Edition workspace; isolation is by catalog, not by host.
+workspace:
+  host: https://dbc-c371ccff-32b5.cloud.databricks.com
+
+include:
+  - resources/*.yml
+
+variables:
+  catalog:
+    description: Unity Catalog catalog for the target. Set per target, never read from the environment.
+
+  ticker_limit:
+    description: >
+      Maximum number of tickers to ingest; 0 means no limit. Dev shrinks the INPUT rather than
+      sampling rows: a row sample of a price series breaks every window-based metric (moving
+      averages, daily returns) and produces numbers that look plausible but are wrong. Ten complete
+      series exercise the same logic as five hundred, at a fraction of the quota.
+    default: 0
+
+  lookback_days:
+    description: >
+      Days of price history to backfill on a cold start. Kept short in dev because Free Edition
+      shuts down ALL compute for the rest of the day once the fair-usage quota is exceeded,
+      including prod, which shares the workspace.
+    default: 365
+
+targets:
+  dev:
+    # Development mode prefixes resource names with the deploying user and pauses schedules, so
+    # iterating here can never trigger a scheduled run.
+    mode: development
+    default: true
+    variables:
+      catalog: stock_market_pipeline_dev
+      ticker_limit: 10
+      lookback_days: 30
+
+  test:
+    # Production mode even though this is not prod. Development mode would deploy a different
+    # artifact: renamed resources, paused triggers, and pipelines in development mode, which reuse
+    # compute between updates and do not retry. A test that runs under different failure behaviour
+    # than prod proves only that the commit ran somewhere.
+    #
+    # Accepted cost: production mode refuses a dirty working tree, so test is not an edit-and-deploy
+    # loop. That loop is what dev is for.
+    #
+    # Free Edition: test and prod draw from the same daily quota. Jobs in this target are run on
+    # demand before a promotion and must never be given a schedule.
+    mode: production
+    variables:
+      catalog: stock_market_pipeline_test
+    workspace:
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
+
+  prod:
+    # Production mode: no user prefix on resource names, schedules run as declared, and deploys
+    # from a dirty working tree are refused.
+    mode: production
+    variables:
+      catalog: stock_market_pipeline_prod
+    workspace:
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
