@@ -1,34 +1,36 @@
-# Environment Variables
-.env
-!.env.example
-
-# Python
+# Environments
+.venv/
+venv/
+.venv-dbconnect/
 __pycache__/
 *.py[cod]
-.mypy_cache/
+
+# Tooling caches / build output
 .pytest_cache/
+.mypy_cache/
 .ruff_cache/
 .coverage
 coverage.xml
 htmlcov/
-
-# Virtual environments
-venv/
-.venv/
-
-
-# macOS
-.DS_Store
-
-# IDEs / Editors
-.vscode/
-.idea/
-
-# Docker
+dist/
+build/
+*.egg-info/
+.ipynb_checkpoints/
 *.log
-docker-compose.override.yml
 
-# Spark / Delta / Local Data
+# Credentials — nothing resembling a secret belongs in this repo.
+# Databricks CLI tokens live in ~/.databrickscfg, outside the tree, on purpose.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.token
+
+# Databricks (bundle state, local auth cache)
+.databricks/
+
+# Spark / Delta / local data
 data/
 spark-warehouse/
 metastore_db/
@@ -41,6 +43,14 @@ _delta_log/
 airflow/logs/
 airflow/config/
 
-# Custom rules
-AGENTS.md
-CLAUDE.md
+# Docker
+docker-compose.override.yml
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Claude Code: per-machine settings and personal notes only
+.claude/settings.local.json
+CLAUDE.local.md
