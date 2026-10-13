@@ -3,34 +3,59 @@ name = "stock-market-pipeline"
 version = "1.0.0"
 description = "Stock market ingestion and processing pipeline"
 readme = "README.md"
-requires-python = ">=3.13"
+# Pinned to 3.12 to match Databricks serverless environment version 6 (Python 3.12.3), the target
+# every job runs on. Developing on a newer interpreter would let syntax and stdlib behaviour through
+# that fails on the platform. databricks-connect 19.x also requires exactly 3.12.
+requires-python = ">=3.12,<3.13"
+
+# Runtime dependencies of the job code. Ranges, not exact pins: uv.lock fixes exact versions for
+# local work, and on serverless the wheel installs on top of the v6 base environment. An exact pin
+# above what v6 ships (pandas 2.3.3, pyarrow 21.0.0) would force an in-place upgrade underneath
+# Databricks' own Spark/pandas integration.
 dependencies = [
-    "yfinance==1.3.0",
-    "pandas==3.0.3",
-    "lxml==6.1.0",
-    "pyspark==4.1.1",
-    "delta-spark==4.2.0",
-    "clickhouse-connect>=1.3.0",
-    "python-dotenv==1.2.2",
+    "yfinance>=1.3",
+    "pandas>=2.2,<3",
+    "pyarrow>=17,<22",
+    "lxml>=6.1",
     "requests>=2.32.3",
-    "pyarrow==24.0.0",
-    "loguru==0.7.3",
-    "apache-airflow==3.2.2",
-    "psycopg2-binary>=2.9.12",
-    "apache-airflow-providers-postgres>=6.7.1",
-    "apache-airflow-providers-fab>=3.6.5",
-    "apache-airflow-providers-clickhousedb>=1.0.0",
-    "soda-core-spark>=3.5.6",
-    "soda-core-spark-df>=3.5.6",
-    "soda-core-mysql>=3.5.6",
-    "pyhive>=0.7.0",
-    "thrift>=0.23.0",
-    "thrift-sasl>=0.4.3",
-    "mysql-connector-python==8.0.29",
-    "setuptools>=82.0.1",
+    "loguru>=0.7.3",
 ]
 
 [dependency-groups]
+# Local Spark for unit tests, matched to serverless v6 (Spark 4.2.0). delta-spark 4.4.1 is the
+# first release whose pyspark range admits 4.2.0.
+local-spark = [
+    "pyspark==4.2.0",
+    "delta-spark==4.4.1",
+]
+
+# Databricks Connect for integration runs against the workspace. It ships its own `pyspark` module,
+# so it can never share an environment with local-spark (declared as a uv conflict below).
+dbconnect = [
+    "databricks-connect~=19.1",
+]
+
+# Docker / Airflow / ClickHouse / Soda stack being replaced by Databricks Jobs, Unity Catalog and
+# DQX. Kept installable only so the existing code and its tests keep running while each piece is
+# ported; this group is deleted together with airflow/, docker/, soda/ and src/db_init/.
+legacy = [
+    "apache-airflow==3.2.2",
+    "apache-airflow-providers-postgres>=6.7.1",
+    "apache-airflow-providers-fab>=3.6.5",
+    "apache-airflow-providers-clickhousedb>=1.0.0",
+    "psycopg2-binary>=2.9.12",
+    "clickhouse-connect>=1.3.0",
+    "soda-core-spark>=3.5.6",
+    "soda-core-spark-df>=3.5.6",
+    "soda-core-mysql>=3.5.6",
+    "mysql-connector-python==8.0.29",
+    "pyhive>=0.7.0",
+    "thrift>=0.23.0",
+    "thrift-sasl>=0.4.3",
+    "python-dotenv==1.2.2",
+    "setuptools>=82.0.1",
+]
+
 dev = [
     "mypy>=2.1.0",
     "pytest==8.3.4",
@@ -40,7 +65,7 @@ dev = [
 
 [tool.ruff]
 line-length = 120
-target-version = "py313"
+target-version = "py312"
 exclude = [
     ".git",
     ".venv",
@@ -137,8 +162,21 @@ explicit_package_bases = true
 ignore_missing_imports = true
 
 [tool.uv]
-override-dependencies = [
-    "mysql-connector-python==8.0.29",
-    "pyspark==4.1.1"
+# `uv sync` installs what CI and local unit tests need. For integration work against the
+# workspace: `uv sync --no-default-groups --group dev --group dbconnect`.
+default-groups = ["dev", "local-spark", "legacy"]
+
+# databricks-connect and pyspark install the same `pyspark` module. Declaring the conflict lets uv
+# resolve both into one lockfile while refusing to install them together; soda-core-spark-df in
+# legacy pulls pyspark too.
+conflicts = [
+    [{ group = "local-spark" }, { group = "dbconnect" }],
+    [{ group = "legacy" }, { group = "dbconnect" }],
 ]
 
+# soda-core-spark-df caps pyspark below the version serverless runs; the override wins until the
+# legacy group is removed. mysql-connector-python is held at 8.0.29 for soda-core-mysql.
+override-dependencies = [
+    "mysql-connector-python==8.0.29",
+    "pyspark==4.2.0",
+]
