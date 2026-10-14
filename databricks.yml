@@ -10,7 +10,9 @@
 # wrong credentials to happen.
 
 bundle:
-  name: stock_market_pipeline
+  name: databricks_stock_market
+  # Direct deployment engine: required by the catalogs resource in resourcer/catalogs.yml.
+  engine: direct
 
 # All three targets live in the same Free Edition workspace; isolation is by catalog, not by host.
 workspace:
