@@ -8,11 +8,14 @@
 # One hardcoded catalog in a notebook is all it takes for a dev run to write into prod, and every
 # target here shares a single Free Edition workspace, so that mistake would not even need the
 # wrong credentials to happen.
+#
+# The catalogs themselves are NOT bundle resources. On Free Edition the Unity Catalog REST endpoint
+# the bundle would call rejects catalog creation without a storage_root (400 INVALID_STATE), so they
+# are created by scripts/bootstrap_catalogs.py with SQL DDL before the first deploy of a target.
+# See docs/decision-log.md (DL-003, DL-004) and docs/adr/ADR-0001-environment-isolation.md.
 
 bundle:
   name: databricks_stock_market
-  # Direct deployment engine: required by the catalogs resource in resourcer/catalogs.yml.
-  engine: direct
 
 # All three targets live in the same Free Edition workspace; isolation is by catalog, not by host.
 workspace:
@@ -47,7 +50,7 @@ targets:
     mode: development
     default: true
     variables:
-      catalog: stock_market_pipeline_dev
+      catalog: databricks_stock_market_dev
       ticker_limit: 10
       lookback_days: 30
 
@@ -64,7 +67,7 @@ targets:
     # demand before a promotion and must never be given a schedule.
     mode: production
     variables:
-      catalog: stock_market_pipeline_test
+      catalog: databricks_stock_market_test
     workspace:
       root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
 
@@ -73,6 +76,6 @@ targets:
     # from a dirty working tree are refused.
     mode: production
     variables:
-      catalog: stock_market_pipeline_prod
+      catalog: databricks_stock_market_prod
     workspace:
       root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}

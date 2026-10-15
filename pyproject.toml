@@ -57,9 +57,14 @@ legacy = [
 ]
 
 dev = [
+    # Operator tooling: scripts/bootstrap_catalogs.py runs DDL through the Statement Execution API.
+    # databricks-connect depends on it too, so the two resolve to one version in the dbconnect env.
+    "databricks-sdk>=0.40",
     "mypy>=2.1.0",
     "pytest==8.3.4",
     "pytest-cov==6.0.0",
+    # tests/unit/test_deploy_provenance.py parses databricks.yml and resources/*.yml.
+    "pyyaml>=6.0",
     "ruff==0.15.15",
 ]
 
@@ -137,6 +142,10 @@ max-complexity = 10
 ]
 "src/streaming/gold.py" = [
     "PLC0415", # inline imports are required for PySpark executor tasks serialization
+]
+"scripts/**/*.py" = [
+    "T201",    # print is the output channel of an operator CLI (no log files, no pipeline context)
+    "S608",    # DDL is built from module constants only, never from user input
 ]
 
 [tool.ruff.lint.pydocstyle]

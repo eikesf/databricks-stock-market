@@ -54,3 +54,4 @@ docker-compose.override.yml
 # Claude Code: per-machine settings and personal notes only
 .claude/settings.local.json
 CLAUDE.local.md
+CLAUDE.md
