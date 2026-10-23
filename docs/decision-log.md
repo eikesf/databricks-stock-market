@@ -51,11 +51,11 @@ This file records every technical decision taken in this project: what forced it
 - Non-trading-day rows with all-null OHLC stay a plain filter: they are source shape, not a quality failure.
 - Rules start inline in the pipeline source tree; they move to an `ops.dq_rules` table only if a pipeline cannot import a shared rules module, which is verified rather than assumed.
 
-The full rule-by-rule mapping (every rule in `quality_rules.py` and every Soda check) is in `docs/plans/lakeflow-migration.md` §2. Pattern reference: `fact_basket_line.py` (`_violations()` routing, `dp.expect_all`) and `ops_audit.py` (`ops.row_conservation` with `dp.expect_or_fail`) in Daniel Rocha's `databricks-retail-lakehouse`.
+The full rule-by-rule mapping (every rule in `quality_rules.py` and every Soda check) is in `docs/plans/lakeflow-migration.md` §2.
 
 **Alternatives considered.**
 - *Keep Soda.* A second system re-checking what the pipeline already enforces, with its own connections and contract files to keep in sync with the rules module. Its post-write checks can only fail a run after bad data is already written.
-- *DQX (Databricks Labs).* Not a core product. Its main draw is the profiler, which fits ranges to a 1,000-row sample; Daniel measured unreviewed profiler candidates quarantining 23.6% of revenue in his project. This project's rules are domain-authored, so DQX adds little beyond another dependency.
+- *DQX (Databricks Labs).* Not a core product. Its main draw is the profiler, which fits ranges to a sample, so unreviewed candidates can quarantine valid rows. This project's rules are domain-authored, so DQX adds little beyond another dependency.
 - *`expect_or_drop`.* Silent loss: the row disappears and only a count remains. Rejected; quarantine keeps the row and the reason.
 
 **Consequences.** One quality mechanism instead of two, visible in the pipeline UI and event log. Expectations exist only inside Lakeflow pipelines, so data quality is now coupled to that choice: moving off Lakeflow means re-implementing the gate. Set-level checks that are not row expectations (uniqueness, completeness percentages, freshness, referential coverage) move to an `ops.dataset_health` view with expectations on it. Several Soda checks change severity (freshness from fail to warn, exchange/currency allow-lists from fail to warn); each is flagged for decision in the plan. Lakeflow treats a rule that evaluates to NULL as passing, unlike some of today's rules, so presence rules must be written to evaluate FALSE on NULL and are pinned by tests.
@@ -120,7 +120,7 @@ Implemented as `make bootstrap ENV=<env>` / `make bootstrap-dry ENV=<env>`. Beyo
 
 **Context.** The first `deploy` on the dev target failed with `400 INVALID_STATE: Metastore storage root URL does not exist. Default Storage is enabled in your account.` The bundle creates `resources.catalogs` through `POST /api/2.1/unity-catalog/catalogs`. On an account with Default Storage (Free Edition), that endpoint requires an explicit `storage_root`, which a Free Edition account does not have and cannot create. Omitting `storage_root` does not fall back to Default Storage on this path.
 
-**Decision.** Remove `resources/catalogs.yml` from the bundle. Create the catalogs with SQL DDL, which resolves Default Storage automatically. The bundle only references the catalog through `${var.catalog}` and assumes it exists. Reference: the same failure and fix are recorded in Daniel Rocha's `databricks-retail-lakehouse` (decision log entry of 2026-08-06 and `scripts/bootstrap_catalogs.py`).
+**Decision.** Remove `resources/catalogs.yml` from the bundle. Create the catalogs with SQL DDL, which resolves Default Storage automatically. The bundle only references the catalog through `${var.catalog}` and assumes it exists.
 
 **Alternatives considered.** Passing a `storage_root` was not possible on Free Edition. Creating catalogs by hand in the UI works but cannot be scripted or reviewed, so environments would drift.
 

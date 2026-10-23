@@ -84,8 +84,7 @@ Parquet sources inside a pipeline on serverless.
 
 ### Silver (M2, #17–#26)
 
-Per domain, the order is conform → gate → deduplicate, following Daniel's
-`silver/pipeline/fact_basket_line.py`:
+Per domain, the order is conform → gate → deduplicate:
 
 1. **Conform** (a pure function `DataFrame -> DataFrame` per domain, importable without a pipeline
    so it can be unit tested): the casts, ticker normalisation (`upper(trim())`, `USDBRL=X → USDBRL`),
@@ -113,8 +112,8 @@ Per domain, the order is conform → gate → deduplicate, following Daniel's
 
 **[verify]** Exact parameter names of `dp.create_auto_cdc_flow` (`track_history_column_list`,
 `stored_as_scd_type`) and `dp.create_streaming_table` (`expect_all_or_fail`, `schema`,
-`cluster_by`) on the current serverless channel. They are used this way in Daniel's repo; the
-Python reference page I could read lists the functions but not their signatures.
+`cluster_by`) on the current serverless channel. The Python reference page I could read lists the
+functions but not their signatures.
 
 ### Ops
 

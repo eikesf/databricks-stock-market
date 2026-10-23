@@ -2,12 +2,6 @@
 
 **Status:** Accepted · **Date:** 2026-10-14 · **Reversal cost:** High
 
-Adapted from ADR-0002 ("Catalog-per-environment on a single metastore") in Daniel Rocha's
-[`databricks-retail-lakehouse`](https://github.com/danielnrocha/databricks-retail-lakehouse), which
-faced the same Free Edition constraints. The structure and most of the reasoning are his; the
-specifics (the stock market domains, `ticker_limit`, the bootstrap path, the `ops` contents) are
-this project's.
-
 ---
 
 ## Context

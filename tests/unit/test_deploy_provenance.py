@@ -1,9 +1,8 @@
 """Offline checks on databricks.yml: each target writes where its name says, in the right mode.
 
-Ported from the offline half of tests/unit/test_deploy_provenance.py in
-danielnrocha/databricks-retail-lakehouse. The workflow half (prod deploys the SHA the test target
-proved) is not ported: there is no deploy workflow yet, and on Free Edition there are no service
-principals, so a CI deploy would need a long-lived personal token (issue #9).
+Only the offline half of deploy provenance is checked. The workflow half (prod deploys the SHA
+the test target proved) does not exist yet: there is no deploy workflow, and on Free Edition there
+are no service principals, so a CI deploy would need a long-lived personal token (issue #9).
 
 `databricks bundle validate` needs credentials, so the properties that can be read straight off
 databricks.yml are asserted here and run on every push.
