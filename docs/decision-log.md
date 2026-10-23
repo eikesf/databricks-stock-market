@@ -4,6 +4,7 @@ This file records every technical decision taken in this project: what forced it
 
 | ID | Date | Decision | Status |
 |---|---|---|---|
+| DL-009 | 2026-10-23 | Schemas and volumes created by the bootstrap script, not as bundle resources; `landing` schema replaced by `bronze.landing` volume, `ops` added | Accepted |
 | DL-008 | 2026-10-14 | Soda Core replaced by native Lakeflow expectations; quarantine routed to `ops` | Accepted (implementation pending plan approval) |
 | DL-007 | 2026-10-14 | Code receives the catalog via pipeline/job configuration; path constants replaced by UC table names | Accepted (implementation deferred to the producer/pipeline refactor) |
 | DL-006 | 2026-10-14 | Bronze ingestion moves to Auto Loader; archive/replay retired | Accepted (implementation pending plan approval) |
@@ -12,6 +13,27 @@ This file records every technical decision taken in this project: what forced it
 | DL-003 | 2026-10-14 | Attempted to manage catalogs as `resources.catalogs` in the bundle | Superseded by DL-004 |
 | DL-002 | 2026-10-14 | Databricks Asset Bundles with dev/test/prod targets, one catalog per environment | Accepted |
 | DL-001 | before 2026-10-14 | Full migration to Databricks Free Edition, ClickHouse replaced by Delta tables | Accepted |
+
+---
+
+## DL-009 — Schemas and volumes created by the bootstrap script, not as bundle resources
+
+**Date:** 2026-10-23 · **Status:** Accepted
+
+**Context.** Issues #2 and #3 planned the schemas (`landing`, `bronze`, `silver`, `gold`) and a `landing.raw` volume as bundle resources in `resources/schemas.yml` and `resources/volumes.yml`. DL-004 moved catalog creation out of the bundle and left schemas open: they might work as `resources.schemas` because they inherit the catalog's storage, but that was never tested on Free Edition. Meanwhile ADR-0001 settled the per-environment layout as `bronze` / `silver` / `gold` / `ops`, and DL-006 placed the landing files where Auto Loader reads them.
+
+**Decision.** Every Unity Catalog container (catalog, schemas, volumes) is created by `scripts/bootstrap_catalogs.py` with idempotent SQL DDL. The bundle creates only compute and code objects (pipelines, jobs) and references containers through `${var.catalog}`. Layout:
+
+- No `landing` schema. Landing files go to the `bronze.landing` volume, subfolders `prices/` and `metadata/` (`/Volumes/<catalog>/bronze/landing/{prices,metadata}/`). Raw files are Bronze's input, so they live in Bronze's schema.
+- An `ops` schema per environment for quarantine and audit tables (DL-008, ADR-0001), plus an `ops.checkpoints` volume.
+
+`resources.schemas` was deliberately not tested: the decision does not depend on whether it works.
+
+**Alternatives considered.** Schemas and volumes as bundle resources (the original plan). Rejected for three reasons. It splits one environment's containers across two tools, so recreating an environment means running the script and a deploy in the right order. Bundle-managed containers are removed by `bundle destroy`, while the catalog they live in is not, which makes the data lifecycle inconsistent. And development mode adds the user prefix to resource names, which would give the dev catalog differently named schemas from test and prod and break the rule that all three are structurally identical (ADR-0001).
+
+**Consequences.** The bootstrap must run before the first deploy of each target (already true for the catalog). A new schema or volume is a change to the script plus a re-run, not a deploy. Grants, if ever needed, go into the script too. If a future need makes bundle-managed schemas attractive (for example, grants declared next to the jobs that need them), test `resources.schemas` on Free Edition first and supersede this entry.
+
+**Content angle.** "Infrastructure that holds data and infrastructure that runs code have different lifecycles. Put them in different tools." Poll idea: do you manage Unity Catalog schemas in your deployment bundle or outside it?
 
 ---
 
