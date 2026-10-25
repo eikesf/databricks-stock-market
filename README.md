@@ -1,8 +1,8 @@
 # End-to-End Batch Stock Market Pipeline
 
-![Python](https://img.shields.io/badge/Python-3.13-blue?style=flat-square&logo=python&logoColor=white)
-![PySpark](https://img.shields.io/badge/PySpark-4.1.1-e25a1c?style=flat-square&logo=apachespark&logoColor=white)
-![Delta Lake](https://img.shields.io/badge/Delta_Lake-4.2.0-00AAD2?style=flat-square)
+![Python](https://img.shields.io/badge/Python-3.12-blue?style=flat-square&logo=python&logoColor=white)
+![PySpark](https://img.shields.io/badge/PySpark-4.2.0-e25a1c?style=flat-square&logo=apachespark&logoColor=white)
+![Delta Lake](https://img.shields.io/badge/Delta_Lake-4.4.1-00AAD2?style=flat-square)
 ![ClickHouse](https://img.shields.io/badge/ClickHouse-25.8_LTS-FFCC01?style=flat-square&logo=clickhouse&logoColor=black)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker&logoColor=white)
 ![CI/CD](https://github.com/eikesf/stock-market-pipeline/actions/workflows/ci.yml/badge.svg)
@@ -19,6 +19,7 @@ The ingestion and Medallion steps are fully orchestrated using **Apache Airflow 
 - [Architecture & Pipelines](#architecture--pipelines)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
+- [Databricks Migration (in progress)](#databricks-migration-in-progress)
 - [Getting Started](#getting-started)
 - [Code Quality & Data Validation](#code-quality--data-validation)
 - [Airflow Orchestration](#airflow-orchestration)
@@ -182,9 +183,9 @@ graph LR
 
 | Layer | Technology | Version | Why |
 |---|---|---|---|
-| **Language** | Python | `3.13-slim` | Current stable release; minimal Docker footprint via slim image. |
+| **Language** | Python | `3.12-slim` | Pinned to match Databricks serverless environment v6 (Python 3.12); minimal Docker footprint via slim image. |
 | **Java Environment** | OpenJDK | `21` | JVM runtime required by Apache Spark 4.x. |
-| **Bronze / Silver** | PySpark + Delta Lake | `Spark 4.1.1` · `Delta 4.2.0` | ACID transactions, time travel, schema enforcement, and window-based deduplication. |
+| **Bronze / Silver** | PySpark + Delta Lake | `Spark 4.2.0` · `Delta 4.4.1` | ACID transactions, time travel, schema enforcement, and window-based deduplication. |
 | **Gold / OLAP** | ClickHouse | `25.8 LTS (Alpine)` | Columnar OLAP database providing sub-second aggregations on large datasets. |
 | **Database Driver** | clickhouse-connect | `>=1.3.0` | Official lightweight Python connector; no JDBC dependency required. |
 | **Airflow Provider** | apache-airflow-providers-clickhousedb | `>=1.0.0` | Official ClickHouse provider hook for seamless integration with Airflow connections. |
@@ -223,7 +224,7 @@ stock_market_pipeline/
 │   ├── landing/             # Raw extractions (prices/ & metadata/)
 │   └── silver/              # Delta Silver layer (prices/, prices_rejected/, metadata/, metadata_rejected/, metrics/, metrics_rejected/)
 ├── docker/
-│   ├── Dockerfile           # Python 3.13 + Java 21 image
+│   ├── Dockerfile           # Python 3.12 + Java 21 image
 │   └── docker-compose.yml   # Full multi-service stack (Airflow, ClickHouse, Python)
 ├── soda/                    # Soda Core quality configurations and contracts
 │   ├── configuration.yml    # Database credentials for scans
@@ -257,6 +258,27 @@ stock_market_pipeline/
     └── streaming/           # Medallion layer and ClickHouse integration tests
         ├── test_maintenance.py   # Tests for Delta maintenance module
         └── test_gold.py     # Tests for Gold loading integration
+```
+
+---
+
+## Databricks Migration (in progress)
+
+The pipeline is being migrated to **Databricks Free Edition** (Unity Catalog, Databricks Asset Bundles, Lakeflow Declarative Pipelines). The Docker stack documented below keeps running until each piece is ported. Plan and decisions:
+
+- `docs/plans/lakeflow-migration.md` — Lakeflow conversion plan (awaiting approval): pipeline layout, quality rule mapping, deletions.
+- `docs/adr/ADR-0001-environment-isolation.md` — one catalog per environment on a single metastore.
+- `docs/decision-log.md` — every decision, newest first.
+
+**Environments.** `databricks.yml` defines three targets, each writing to its own catalog: `databricks_stock_market_dev`, `_test` and `_prod`, each with `bronze`, `silver`, `gold` and `ops` schemas, a `bronze.landing` volume (extractor output, subfolders `prices/` and `metadata/`) and an `ops.checkpoints` volume. The catalog name lives only in `databricks.yml` (`var.catalog`, no default); `tests/unit/test_deploy_provenance.py` checks each target points at its own catalog.
+
+**Catalogs are bootstrapped, not deployed.** On Free Edition, creating a catalog through the Unity Catalog REST API (which a bundle `catalogs` resource uses) fails with `400 INVALID_STATE: Metastore storage root URL does not exist`, so `scripts/bootstrap_catalogs.py` creates catalogs, schemas and volumes with idempotent SQL DDL through the SQL warehouse. Run it before the first deploy of a target. These targets run locally with `uv` (not in the container) and use your Databricks CLI authentication (`~/.databrickscfg`; choose a profile with `DATABRICKS_CONFIG_PROFILE`):
+
+```bash
+make bootstrap-dry ENV=dev   # authenticate and print the SQL, execute nothing
+make bootstrap ENV=dev       # create catalog, schemas, volumes, tags; then verify (no ENV = all three)
+make validate TARGET=dev     # databricks bundle validate -t dev
+make deploy TARGET=dev       # databricks bundle deploy -t dev
 ```
 
 ---
@@ -298,7 +320,7 @@ This starts the following services:
 - `airflow_apiserver`: Airflow 3 API Server and Web UI on port `8080`.
 - `airflow_scheduler`: Airflow Scheduler orchestrating DAGs.
 - `airflow_dag_processor`: Standalone Dag Processor parsing DAG definitions.
-- `python_finance`: Isolated Python 3.13 workspace containing Java 21, Spark 4.1.1, and dev tools.
+- `python_finance`: Isolated Python 3.12 workspace containing Java 21, Spark 4.2.0, and dev tools.
 
 ### 3 — Tear down the environment
 

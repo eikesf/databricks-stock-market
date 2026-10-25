@@ -5,7 +5,7 @@ export DOCKER_CLI_HINTS=false
 .PHONY: up down build shell airflow_up airflow_down lint lint_fix format test test_cov run run_prices run_metadata _prices_flow _metadata_flow run_landing_prices run_landing_metadata \
 		run_bronze_prices run_bronze_metadata run_silver_prices \
 		run_silver_metadata run_gold run_gold_prices run_gold_metadata run_maintenance clean clean_data reset \
-		soda_silver soda_gold soda_all
+		soda_silver soda_gold soda_all bootstrap bootstrap-dry validate deploy
 
 # --- Infrastructure ---
 up: ## Start the Docker environment
@@ -49,6 +49,25 @@ soda_gold: ## Run Soda Core Gold quality contracts (ClickHouse)
 	docker exec python_finance sh -c "soda scan -d clickhouse -c /app/soda/configuration.yml /app/soda/contracts/gold_*.yml" || [ $$? -eq 1 ]
 
 soda_all: soda_silver soda_gold ## Run all Soda Core quality contracts (Silver & Gold)
+
+# --- Databricks ---
+# These run locally with uv, not inside the Docker container. Authentication is the Databricks
+# CLI/SDK default chain (~/.databrickscfg); pick a profile with DATABRICKS_CONFIG_PROFILE=<name>.
+ENV ?=
+TARGET ?= dev
+BOOTSTRAP = uv run python scripts/bootstrap_catalogs.py $(if $(ENV),--env $(ENV))
+
+bootstrap: ## Create catalogs, schemas and volumes (ENV=dev|test|prod; no ENV = all). Idempotent.
+	$(BOOTSTRAP)
+
+bootstrap-dry: ## Authenticate and print the bootstrap SQL without executing it (ENV=dev|test|prod; no ENV = all)
+	$(BOOTSTRAP) --dry-run
+
+validate: ## Validate the bundle for a target (TARGET=dev|test|prod)
+	databricks bundle validate -t $(TARGET)
+
+deploy: ## Deploy the bundle to a target (TARGET=dev|test|prod). Run make bootstrap ENV=<target> first.
+	databricks bundle deploy -t $(TARGET)
 
 # --- Environment Management ---
 clean: ## Stop containers and remove docker volumes (Clickhouse data)
