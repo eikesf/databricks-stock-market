@@ -276,6 +276,8 @@ The pipeline is being migrated to **Databricks Free Edition** (Unity Catalog, Da
 
 **Code ships as a wheel.** `databricks bundle deploy` builds the project wheel locally with `uv build --wheel` (the `artifacts` block in `databricks.yml`, with `dynamic_version` so serverless never reuses a cached build) and installs it in a serverless environment v6 job. The wheel (`databricks-stock-market`) contains only the new `src/stock_market` package, imported as `stock_market`; the legacy modules under `src/` stay out of it. The `stock_market_smoke` job (`resources/smoke_job.yml`) runs the `stock-market-smoke` entry point and prints the package, Python, pandas and pyarrow versions to check each deploy. Deploying needs `uv` installed. See DL-010.
 
+**Unity Catalog names come from one resolver.** `CatalogNames` (`src/stock_market/catalog.py`) turns the catalog a job receives into table names and volume paths. No code in `src/` writes a catalog name; `tests/unit/test_catalog.py` checks that. See DL-007.
+
 ```bash
 make bootstrap-dry ENV=dev   # authenticate and print the SQL, execute nothing
 make bootstrap ENV=dev       # create catalog, schemas, volumes, tags; then verify (no ENV = all three)

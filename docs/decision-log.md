@@ -7,7 +7,7 @@ This file records every technical decision taken in this project: what forced it
 | DL-010 | 2026-10-25 | Project wheel built by the bundle and installed on serverless | Accepted |
 | DL-009 | 2026-10-23 | Schemas and volumes created by the bootstrap script, not as bundle resources; `landing` schema replaced by `bronze.landing` volume, `ops` added | Accepted |
 | DL-008 | 2026-10-14 | Soda Core replaced by native Lakeflow expectations; quarantine routed to `ops` | Accepted (implementation pending plan approval) |
-| DL-007 | 2026-10-14 | Code receives the catalog via pipeline/job configuration; path constants replaced by UC table names | Accepted (implementation deferred to the producer/pipeline refactor) |
+| DL-007 | 2026-10-14 | Code receives the catalog via pipeline/job configuration; path constants replaced by UC table names | Accepted (resolver implemented in #5; grows per layer) |
 | DL-006 | 2026-10-14 | Bronze ingestion moves to Auto Loader; archive/replay retired | Accepted (implementation pending plan approval) |
 | DL-005 | 2026-10-14 | Bootstrap script in Python (Databricks SDK) executing SQL DDL | Accepted |
 | DL-004 | 2026-10-14 | Catalogs created via SQL DDL, not as bundle resources | Accepted |
@@ -101,7 +101,7 @@ The full rule-by-rule mapping (every rule in `quality_rules.py` and every Soda c
 
 ## DL-007 — Code receives the catalog via pipeline/job configuration; path constants replaced by UC table names
 
-**Date:** 2026-10-14 · **Status:** Accepted (implementation deferred to the producer/pipeline refactor)
+**Date:** 2026-10-14 · **Status:** Accepted (resolver implemented in #5; grows per layer)
 
 **Context.** `src/producer/config.py` builds every location from a `DATA_DIR` environment variable (`data/landing/prices`, `data/bronze/...`) and created the directories on import. On Databricks there is no local data directory: tables are Unity Catalog names in a per-environment catalog (DL-002), and files live in volumes. Any route by which code *discovers* its catalog (an environment variable, a default, a literal) is a route by which a dev run can write to prod.
 
@@ -109,7 +109,7 @@ The full rule-by-rule mapping (every rule in `quality_rules.py` and every Soda c
 
 **Alternatives considered.** An environment variable (`CATALOG=...`) was rejected: it is invisible in the bundle, has to be set separately per job, and a missing value tends to get a default, which is a guess about where to write. A default catalog in code was rejected for the same reason. Building names in each module was rejected in favour of one helper so the layout cannot drift between modules.
 
-**Consequences.** Code cannot run without being told its catalog, which is the point; local runs pass it explicitly. For plain-Python tasks such as the extractors the route ends in a task argument rather than `spark.conf`, because they have no Spark session; the rule that matters (no literal, no environment variable) still holds. Until the refactor, `src/` still uses the local `DATA_DIR` paths.
+**Consequences.** Code cannot run without being told its catalog, which is the point; local runs pass it explicitly. For plain-Python tasks such as the extractors the route ends in a task argument rather than `spark.conf`, because they have no Spark session; the rule that matters (no literal, no environment variable) still holds. `CatalogNames` in `src/stock_market/catalog.py` (inside the wheel, DL-010) is the only place that builds Unity Catalog names. It validates the catalog when it is created and is immutable (a frozen dataclass). Today it covers the Bronze tables and the landing volume; the Silver, `ops` (quarantine, DL-008) and Gold names are added by the issues that create those tables. `tests/unit/test_catalog.py` fails on any hand-written catalog name in `src/`. The legacy code keeps using the local `DATA_DIR` paths in `src/producer/config.py` until #50.
 
 **Content angle.** "The most dangerous line in a multi-environment pipeline is a default value." Short post on why the catalog has no default.
 

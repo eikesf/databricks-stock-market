@@ -9,11 +9,13 @@ check on the Free Edition workspace before (or while) the code is written. Items
 **[decide]** need your call before implementation.
 
 **Scope note.** Parts of this plan assume a producer refactor that was drafted and then taken out
-of the infrastructure step: `src/producer/config.py` as a Unity Catalog name builder
+of the infrastructure step: `src/stock_market/catalog.py` as a Unity Catalog name builder
 (`CatalogNames`), the old path constants moved to `src/streaming/legacy_paths.py`, extractors
 taking `--landing-path` / `--max-tickers`, `var.landing_path` / `var.max_tickers` in the bundle,
-and `tests/unit/test_no_hardcoded_catalog.py`. None of that is in the repo today (the bundle still
-has `ticker_limit`). It becomes the first step of the conversion, and will be redesigned alongside
+and `tests/unit/test_no_hardcoded_catalog.py`. `CatalogNames` now exists (issue #5), covering the
+Bronze tables and the landing volume, and its hardcoded-catalog check lives in
+`tests/unit/test_catalog.py`. The rest of that list is still pending (the bundle still has
+`ticker_limit`). It becomes the first step of the conversion, and will be redesigned alongside
 the move from Airflow to Lakeflow jobs.
 
 ---
@@ -336,7 +338,7 @@ call (rows 39, S-M7/S-M8, G-P11/G-M8/G-X6).
 | `src/streaming/quality_rules.py` | Rule definitions + `classify`/`split_valid_rejected` | Rules as SQL expressions (section 2) + `_violations()` routing. Deleted only after the parity test in section 7 passes. |
 | `src/streaming/gold.py`, `src/db_init/` (#48) | ClickHouse load, DDL, views | Gold materialized views. |
 | `src/quality/soda_validator.py`, `soda/` (#47) | Post-write contract checks | Section 2 expectations, quarantine and `ops.dataset_health`. |
-| `src/streaming/spark_session.py`, `src/streaming/utils.py` remainder, `src/streaming/legacy_paths.py`, `src/utils/dag_helpers.py` | Session factory, ClickHouse client, local paths, Airflow ClickHouse hook | Pipeline-provided session; `src/producer/config.py` (UC names). |
+| `src/streaming/spark_session.py`, `src/streaming/utils.py` remainder, `src/streaming/legacy_paths.py`, `src/utils/dag_helpers.py` | Session factory, ClickHouse client, local paths, Airflow ClickHouse hook | Pipeline-provided session; `src/stock_market/catalog.py` (UC names). |
 | `src/utils/alerts.py`, `airflow/` (#45) | Email + Discord on task failure | Job email notifications (#40) and a Discord notification destination (#41). |
 | `docker/`, `Makefile` Docker targets (#46), `legacy` dependency group (#50) | Local runtime | Serverless jobs and pipelines; `uv` for local tests. |
 
@@ -361,7 +363,7 @@ keep it as reserved space for any stream that ever runs outside the pipeline, or
 /Volumes/<catalog>/ops/checkpoints/<layer>/<dataset>/schema         # Auto Loader schema location
 ```
 
-built only through `CatalogNames.checkpoints_root` in `src/producer/config.py`, never as a literal.
+built only through `CatalogNames.checkpoints_root` in `src/stock_market/catalog.py`, never as a literal.
 
 ---
 
