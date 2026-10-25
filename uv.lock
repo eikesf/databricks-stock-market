@@ -2,11 +2,11 @@ version = 1
 revision = 3
 requires-python = "==3.12.*"
 conflicts = [[
-    { package = "stock-market-pipeline", group = "dbconnect" },
-    { package = "stock-market-pipeline", group = "local-spark" },
+    { package = "databricks-stock-market", group = "dbconnect" },
+    { package = "databricks-stock-market", group = "local-spark" },
 ], [
-    { package = "stock-market-pipeline", group = "dbconnect" },
-    { package = "stock-market-pipeline", group = "legacy" },
+    { package = "databricks-stock-market", group = "dbconnect" },
+    { package = "databricks-stock-market", group = "legacy" },
 ]]
 
 [manifest]
@@ -137,7 +137,7 @@ dependencies = [
     { name = "cryptography" },
     { name = "deprecated" },
     { name = "dill" },
-    { name = "fastapi", extra = ["standard-no-fastapi-cloud-cli"], marker = "extra == 'group-21-stock-market-pipeline-legacy' or extra == 'group-21-stock-market-pipeline-local-spark' or extra != 'group-21-stock-market-pipeline-dbconnect'" },
+    { name = "fastapi", extra = ["standard-no-fastapi-cloud-cli"], marker = "extra == 'group-23-databricks-stock-market-legacy' or extra == 'group-23-databricks-stock-market-local-spark' or extra != 'group-23-databricks-stock-market-dbconnect'" },
     { name = "httpx" },
     { name = "importlib-metadata" },
     { name = "itsdangerous" },
@@ -170,7 +170,7 @@ dependencies = [
     { name = "rich" },
     { name = "rich-argparse" },
     { name = "setproctitle" },
-    { name = "sqlalchemy", extra = ["asyncio"], marker = "extra == 'group-21-stock-market-pipeline-legacy' or extra == 'group-21-stock-market-pipeline-local-spark' or extra != 'group-21-stock-market-pipeline-dbconnect'" },
+    { name = "sqlalchemy", extra = ["asyncio"], marker = "extra == 'group-23-databricks-stock-market-legacy' or extra == 'group-23-databricks-stock-market-local-spark' or extra != 'group-23-databricks-stock-market-dbconnect'" },
     { name = "starlette" },
     { name = "structlog" },
     { name = "svcs" },
@@ -512,7 +512,7 @@ name = "cffi"
 version = "2.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pycparser", marker = "implementation_name != 'PyPy' or (extra == 'group-21-stock-market-pipeline-dbconnect' and extra == 'group-21-stock-market-pipeline-legacy') or (extra == 'group-21-stock-market-pipeline-dbconnect' and extra == 'group-21-stock-market-pipeline-local-spark')" },
+    { name = "pycparser", marker = "implementation_name != 'PyPy' or (extra == 'group-23-databricks-stock-market-dbconnect' and extra == 'group-23-databricks-stock-market-legacy') or (extra == 'group-23-databricks-stock-market-dbconnect' and extra == 'group-23-databricks-stock-market-local-spark')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/eb/56/b1ba7935a17738ae8453301356628e8147c79dbb825bcbc73dc7401f9846/cffi-2.0.0.tar.gz", hash = "sha256:44d1b5909021139fe36001ae048dbdde8214afa20200eda0f64c068cac5d5529", size = 523588, upload-time = "2025-09-08T23:24:04.541Z" }
 wheels = [
@@ -665,7 +665,7 @@ name = "cryptography"
 version = "48.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "cffi", marker = "platform_python_implementation != 'PyPy' or (extra == 'group-21-stock-market-pipeline-dbconnect' and extra == 'group-21-stock-market-pipeline-legacy') or (extra == 'group-21-stock-market-pipeline-dbconnect' and extra == 'group-21-stock-market-pipeline-local-spark')" },
+    { name = "cffi", marker = "platform_python_implementation != 'PyPy' or (extra == 'group-23-databricks-stock-market-dbconnect' and extra == 'group-23-databricks-stock-market-legacy') or (extra == 'group-23-databricks-stock-market-dbconnect' and extra == 'group-23-databricks-stock-market-local-spark')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/9f/a9/db8f313fdcd85d767d4973515e1db101f9c71f95fced83233de224673757/cryptography-48.0.0.tar.gz", hash = "sha256:5c3932f4436d1cccb036cb0eaef46e6e2db91035166f1ad6505c3c9d5a635920", size = 832984, upload-time = "2026-05-04T22:59:38.133Z" }
 wheels = [
@@ -762,6 +762,95 @@ wheels = [
 ]
 
 [[package]]
+name = "databricks-stock-market"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "loguru" },
+    { name = "lxml" },
+    { name = "pandas" },
+    { name = "pyarrow" },
+    { name = "requests" },
+    { name = "yfinance" },
+]
+
+[package.dev-dependencies]
+dbconnect = [
+    { name = "databricks-connect" },
+]
+dev = [
+    { name = "databricks-sdk" },
+    { name = "mypy" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "pyyaml" },
+    { name = "ruff" },
+]
+legacy = [
+    { name = "apache-airflow" },
+    { name = "apache-airflow-providers-clickhousedb" },
+    { name = "apache-airflow-providers-fab" },
+    { name = "apache-airflow-providers-postgres" },
+    { name = "clickhouse-connect" },
+    { name = "mysql-connector-python" },
+    { name = "psycopg2-binary" },
+    { name = "pyhive" },
+    { name = "python-dotenv" },
+    { name = "setuptools" },
+    { name = "soda-core-mysql" },
+    { name = "soda-core-spark" },
+    { name = "soda-core-spark-df" },
+    { name = "thrift" },
+    { name = "thrift-sasl" },
+]
+local-spark = [
+    { name = "delta-spark" },
+    { name = "pyspark" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "loguru", specifier = ">=0.7.3" },
+    { name = "lxml", specifier = ">=6.1" },
+    { name = "pandas", specifier = ">=2.2,<3" },
+    { name = "pyarrow", specifier = ">=17,<22" },
+    { name = "requests", specifier = ">=2.32.3" },
+    { name = "yfinance", specifier = ">=1.3" },
+]
+
+[package.metadata.requires-dev]
+dbconnect = [{ name = "databricks-connect", specifier = "~=19.1" }]
+dev = [
+    { name = "databricks-sdk", specifier = ">=0.40" },
+    { name = "mypy", specifier = ">=2.1.0" },
+    { name = "pytest", specifier = "==8.3.4" },
+    { name = "pytest-cov", specifier = "==6.0.0" },
+    { name = "pyyaml", specifier = ">=6.0" },
+    { name = "ruff", specifier = "==0.15.15" },
+]
+legacy = [
+    { name = "apache-airflow", specifier = "==3.2.2" },
+    { name = "apache-airflow-providers-clickhousedb", specifier = ">=1.0.0" },
+    { name = "apache-airflow-providers-fab", specifier = ">=3.6.5" },
+    { name = "apache-airflow-providers-postgres", specifier = ">=6.7.1" },
+    { name = "clickhouse-connect", specifier = ">=1.3.0" },
+    { name = "mysql-connector-python", specifier = "==8.0.29" },
+    { name = "psycopg2-binary", specifier = ">=2.9.12" },
+    { name = "pyhive", specifier = ">=0.7.0" },
+    { name = "python-dotenv", specifier = "==1.2.2" },
+    { name = "setuptools", specifier = ">=82.0.1" },
+    { name = "soda-core-mysql", specifier = ">=3.5.6" },
+    { name = "soda-core-spark", specifier = ">=3.5.6" },
+    { name = "soda-core-spark-df", specifier = ">=3.5.6" },
+    { name = "thrift", specifier = ">=0.23.0" },
+    { name = "thrift-sasl", specifier = ">=0.4.3" },
+]
+local-spark = [
+    { name = "delta-spark", specifier = "==4.4.1" },
+    { name = "pyspark", specifier = "==4.2.0" },
+]
+
+[[package]]
 name = "delta-spark"
 version = "4.4.1"
 source = { registry = "https://pypi.org/simple" }
@@ -836,13 +925,13 @@ wheels = [
 [package.optional-dependencies]
 standard-no-fastapi-cloud-cli = [
     { name = "email-validator" },
-    { name = "fastapi-cli", extra = ["standard-no-fastapi-cloud-cli"], marker = "extra == 'group-21-stock-market-pipeline-legacy' or extra == 'group-21-stock-market-pipeline-local-spark' or extra != 'group-21-stock-market-pipeline-dbconnect'" },
+    { name = "fastapi-cli", extra = ["standard-no-fastapi-cloud-cli"], marker = "extra == 'group-23-databricks-stock-market-legacy' or extra == 'group-23-databricks-stock-market-local-spark' or extra != 'group-23-databricks-stock-market-dbconnect'" },
     { name = "httpx" },
     { name = "jinja2" },
     { name = "pydantic-extra-types" },
     { name = "pydantic-settings" },
     { name = "python-multipart" },
-    { name = "uvicorn", extra = ["standard"], marker = "extra == 'group-21-stock-market-pipeline-legacy' or extra == 'group-21-stock-market-pipeline-local-spark' or extra != 'group-21-stock-market-pipeline-dbconnect'" },
+    { name = "uvicorn", extra = ["standard"], marker = "extra == 'group-23-databricks-stock-market-legacy' or extra == 'group-23-databricks-stock-market-local-spark' or extra != 'group-23-databricks-stock-market-dbconnect'" },
 ]
 
 [[package]]
@@ -852,7 +941,7 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "rich-toolkit" },
     { name = "typer" },
-    { name = "uvicorn", extra = ["standard"], marker = "extra == 'group-21-stock-market-pipeline-legacy' or extra == 'group-21-stock-market-pipeline-local-spark' or extra != 'group-21-stock-market-pipeline-dbconnect'" },
+    { name = "uvicorn", extra = ["standard"], marker = "extra == 'group-23-databricks-stock-market-legacy' or extra == 'group-23-databricks-stock-market-local-spark' or extra != 'group-23-databricks-stock-market-dbconnect'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/6e/58/74797ae9e4610cfa0c6b34c8309096d3b20bb29be3b8b5fbf1004d10fa5f/fastapi_cli-0.0.24.tar.gz", hash = "sha256:1afc9c9e21d7ebc8a3ca5e31790cd8d837742be7e4f8b9236e99cb3451f0de00", size = 19043, upload-time = "2026-02-24T10:45:10.476Z" }
 wheels = [
@@ -861,7 +950,7 @@ wheels = [
 
 [package.optional-dependencies]
 standard-no-fastapi-cloud-cli = [
-    { name = "uvicorn", extra = ["standard"], marker = "extra == 'group-21-stock-market-pipeline-legacy' or extra == 'group-21-stock-market-pipeline-local-spark' or extra != 'group-21-stock-market-pipeline-dbconnect'" },
+    { name = "uvicorn", extra = ["standard"], marker = "extra == 'group-23-databricks-stock-market-legacy' or extra == 'group-23-databricks-stock-market-local-spark' or extra != 'group-23-databricks-stock-market-dbconnect'" },
 ]
 
 [[package]]
@@ -886,7 +975,7 @@ name = "flask-appbuilder"
 version = "5.2.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "apispec", extra = ["yaml"], marker = "extra == 'group-21-stock-market-pipeline-legacy' or extra == 'group-21-stock-market-pipeline-local-spark' or extra != 'group-21-stock-market-pipeline-dbconnect'" },
+    { name = "apispec", extra = ["yaml"], marker = "extra == 'group-23-databricks-stock-market-legacy' or extra == 'group-23-databricks-stock-market-local-spark' or extra != 'group-23-databricks-stock-market-dbconnect'" },
     { name = "click" },
     { name = "colorama" },
     { name = "email-validator" },
@@ -1376,8 +1465,8 @@ name = "loguru"
 version = "0.7.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'group-21-stock-market-pipeline-dbconnect' and extra == 'group-21-stock-market-pipeline-legacy') or (extra == 'group-21-stock-market-pipeline-dbconnect' and extra == 'group-21-stock-market-pipeline-local-spark')" },
-    { name = "win32-setctime", marker = "sys_platform == 'win32' or (extra == 'group-21-stock-market-pipeline-dbconnect' and extra == 'group-21-stock-market-pipeline-legacy') or (extra == 'group-21-stock-market-pipeline-dbconnect' and extra == 'group-21-stock-market-pipeline-local-spark')" },
+    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'group-23-databricks-stock-market-dbconnect' and extra == 'group-23-databricks-stock-market-legacy') or (extra == 'group-23-databricks-stock-market-dbconnect' and extra == 'group-23-databricks-stock-market-local-spark')" },
+    { name = "win32-setctime", marker = "sys_platform == 'win32' or (extra == 'group-23-databricks-stock-market-dbconnect' and extra == 'group-23-databricks-stock-market-legacy') or (extra == 'group-23-databricks-stock-market-dbconnect' and extra == 'group-23-databricks-stock-market-local-spark')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/3a/05/a1dae3dffd1116099471c643b8924f5aa6524411dc6c63fdae648c4f1aca/loguru-0.7.3.tar.gz", hash = "sha256:19480589e77d47b8d85b2c827ad95d49bf31b0dcde16593892eb51dd18706eb6", size = 63559, upload-time = "2024-12-06T11:20:56.608Z" }
 wheels = [
@@ -1569,7 +1658,7 @@ version = "2.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "ast-serialize" },
-    { name = "librt", marker = "platform_python_implementation != 'PyPy' or (extra == 'group-21-stock-market-pipeline-dbconnect' and extra == 'group-21-stock-market-pipeline-legacy') or (extra == 'group-21-stock-market-pipeline-dbconnect' and extra == 'group-21-stock-market-pipeline-local-spark')" },
+    { name = "librt", marker = "platform_python_implementation != 'PyPy' or (extra == 'group-23-databricks-stock-market-dbconnect' and extra == 'group-23-databricks-stock-market-legacy') or (extra == 'group-23-databricks-stock-market-dbconnect' and extra == 'group-23-databricks-stock-market-local-spark')" },
     { name = "mypy-extensions" },
     { name = "pathspec" },
     { name = "typing-extensions" },
@@ -1727,7 +1816,7 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "googleapis-common-protos" },
     { name = "opentelemetry-api" },
-    { name = "opentelemetry-exporter-http-transport", extra = ["requests"], marker = "extra == 'group-21-stock-market-pipeline-legacy' or extra == 'group-21-stock-market-pipeline-local-spark' or extra != 'group-21-stock-market-pipeline-dbconnect'" },
+    { name = "opentelemetry-exporter-http-transport", extra = ["requests"], marker = "extra == 'group-23-databricks-stock-market-legacy' or extra == 'group-23-databricks-stock-market-local-spark' or extra != 'group-23-databricks-stock-market-dbconnect'" },
     { name = "opentelemetry-exporter-otlp-common" },
     { name = "opentelemetry-exporter-otlp-proto-common" },
     { name = "opentelemetry-proto" },
@@ -2143,7 +2232,7 @@ name = "pytest"
 version = "8.3.4"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'group-21-stock-market-pipeline-dbconnect' and extra == 'group-21-stock-market-pipeline-legacy') or (extra == 'group-21-stock-market-pipeline-dbconnect' and extra == 'group-21-stock-market-pipeline-local-spark')" },
+    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'group-23-databricks-stock-market-dbconnect' and extra == 'group-23-databricks-stock-market-legacy') or (extra == 'group-23-databricks-stock-market-dbconnect' and extra == 'group-23-databricks-stock-market-local-spark')" },
     { name = "iniconfig" },
     { name = "packaging" },
     { name = "pluggy" },
@@ -2573,95 +2662,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/25/44/ec35f1b6e83094b997da438a02c8c9b0ade2b1e84cfc48bd4656780760a6/starlette-1.2.1.tar.gz", hash = "sha256:9b9b5ebb992e67d6093741e63c2f59e4f6fff986f81163c087867bd7b924b3f6", size = 2701854, upload-time = "2026-05-31T01:07:51.847Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/1c/54/196d0c1db10af76baa4f64894448505d60d3cdf70ef92cbb35f46a4e4c71/starlette-1.2.1-py3-none-any.whl", hash = "sha256:4de0082d08c8f6764a85a54cf1120d6939507a19905c7768acad2a9f875d2b89", size = 73350, upload-time = "2026-05-31T01:07:50.09Z" },
-]
-
-[[package]]
-name = "stock-market-pipeline"
-version = "1.0.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "loguru" },
-    { name = "lxml" },
-    { name = "pandas" },
-    { name = "pyarrow" },
-    { name = "requests" },
-    { name = "yfinance" },
-]
-
-[package.dev-dependencies]
-dbconnect = [
-    { name = "databricks-connect" },
-]
-dev = [
-    { name = "databricks-sdk" },
-    { name = "mypy" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "pyyaml" },
-    { name = "ruff" },
-]
-legacy = [
-    { name = "apache-airflow" },
-    { name = "apache-airflow-providers-clickhousedb" },
-    { name = "apache-airflow-providers-fab" },
-    { name = "apache-airflow-providers-postgres" },
-    { name = "clickhouse-connect" },
-    { name = "mysql-connector-python" },
-    { name = "psycopg2-binary" },
-    { name = "pyhive" },
-    { name = "python-dotenv" },
-    { name = "setuptools" },
-    { name = "soda-core-mysql" },
-    { name = "soda-core-spark" },
-    { name = "soda-core-spark-df" },
-    { name = "thrift" },
-    { name = "thrift-sasl" },
-]
-local-spark = [
-    { name = "delta-spark" },
-    { name = "pyspark" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "loguru", specifier = ">=0.7.3" },
-    { name = "lxml", specifier = ">=6.1" },
-    { name = "pandas", specifier = ">=2.2,<3" },
-    { name = "pyarrow", specifier = ">=17,<22" },
-    { name = "requests", specifier = ">=2.32.3" },
-    { name = "yfinance", specifier = ">=1.3" },
-]
-
-[package.metadata.requires-dev]
-dbconnect = [{ name = "databricks-connect", specifier = "~=19.1" }]
-dev = [
-    { name = "databricks-sdk", specifier = ">=0.40" },
-    { name = "mypy", specifier = ">=2.1.0" },
-    { name = "pytest", specifier = "==8.3.4" },
-    { name = "pytest-cov", specifier = "==6.0.0" },
-    { name = "pyyaml", specifier = ">=6.0" },
-    { name = "ruff", specifier = "==0.15.15" },
-]
-legacy = [
-    { name = "apache-airflow", specifier = "==3.2.2" },
-    { name = "apache-airflow-providers-clickhousedb", specifier = ">=1.0.0" },
-    { name = "apache-airflow-providers-fab", specifier = ">=3.6.5" },
-    { name = "apache-airflow-providers-postgres", specifier = ">=6.7.1" },
-    { name = "clickhouse-connect", specifier = ">=1.3.0" },
-    { name = "mysql-connector-python", specifier = "==8.0.29" },
-    { name = "psycopg2-binary", specifier = ">=2.9.12" },
-    { name = "pyhive", specifier = ">=0.7.0" },
-    { name = "python-dotenv", specifier = "==1.2.2" },
-    { name = "setuptools", specifier = ">=82.0.1" },
-    { name = "soda-core-mysql", specifier = ">=3.5.6" },
-    { name = "soda-core-spark", specifier = ">=3.5.6" },
-    { name = "soda-core-spark-df", specifier = ">=3.5.6" },
-    { name = "thrift", specifier = ">=0.23.0" },
-    { name = "thrift-sasl", specifier = ">=0.4.3" },
-]
-local-spark = [
-    { name = "delta-spark", specifier = "==4.4.1" },
-    { name = "pyspark", specifier = "==4.2.0" },
 ]
 
 [[package]]

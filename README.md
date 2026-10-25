@@ -274,11 +274,14 @@ The pipeline is being migrated to **Databricks Free Edition** (Unity Catalog, Da
 
 **Catalogs are bootstrapped, not deployed.** On Free Edition, creating a catalog through the Unity Catalog REST API (which a bundle `catalogs` resource uses) fails with `400 INVALID_STATE: Metastore storage root URL does not exist`, so `scripts/bootstrap_catalogs.py` creates catalogs, schemas and volumes with idempotent SQL DDL through the SQL warehouse. Run it before the first deploy of a target. These targets run locally with `uv` (not in the container) and use your Databricks CLI authentication (`~/.databrickscfg`; choose a profile with `DATABRICKS_CONFIG_PROFILE`):
 
+**Code ships as a wheel.** `databricks bundle deploy` builds the project wheel locally with `uv build --wheel` (the `artifacts` block in `databricks.yml`, with `dynamic_version` so serverless never reuses a cached build) and installs it in a serverless environment v6 job. The wheel (`databricks-stock-market`) contains only the new `src/stock_market` package, imported as `stock_market`; the legacy modules under `src/` stay out of it. The `stock_market_smoke` job (`resources/smoke_job.yml`) runs the `stock-market-smoke` entry point and prints the package, Python, pandas and pyarrow versions to check each deploy. Deploying needs `uv` installed. See DL-010.
+
 ```bash
 make bootstrap-dry ENV=dev   # authenticate and print the SQL, execute nothing
 make bootstrap ENV=dev       # create catalog, schemas, volumes, tags; then verify (no ENV = all three)
 make validate TARGET=dev     # databricks bundle validate -t dev
 make deploy TARGET=dev       # databricks bundle deploy -t dev
+databricks bundle run stock_market_smoke -t dev   # check the deployed wheel
 ```
 
 ---

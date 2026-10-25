@@ -1,7 +1,7 @@
 [project]
-name = "stock-market-pipeline"
-version = "1.0.0"
-description = "Stock market ingestion and processing pipeline"
+name = "databricks-stock-market"
+version = "0.1.0"
+description = "Stock market lakehouse on Databricks: ingestion, medallion transforms and analytics"
 readme = "README.md"
 # Pinned to 3.12 to match Databricks serverless environment version 6 (Python 3.12.3), the target
 # every job runs on. Developing on a newer interpreter would let syntax and stdlib behaviour through
@@ -20,6 +20,9 @@ dependencies = [
     "requests>=2.32.3",
     "loguru>=0.7.3",
 ]
+
+[project.scripts]
+stock-market-smoke = "stock_market.smoke:main"
 
 [dependency-groups]
 # Local Spark for unit tests, matched to serverless v6 (Spark 4.2.0). delta-spark 4.4.1 is the
@@ -152,7 +155,7 @@ max-complexity = 10
 convention = "google"
 
 [tool.ruff.lint.isort]
-known-first-party = ["src"]
+known-first-party = ["src", "stock_market"]
 
 [tool.ruff.format]
 quote-style = "double"
@@ -189,3 +192,11 @@ override-dependencies = [
     "mysql-connector-python==8.0.29",
     "pyspark==4.2.0",
 ]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# Only the new package ships in the wheel; the legacy modules under src/ stay out of it.
+[tool.hatch.build.targets.wheel]
+packages = ["src/stock_market"]

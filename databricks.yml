@@ -24,6 +24,13 @@ workspace:
 include:
   - resources/*.yml
 
+artifacts:
+  stock_market_wheel:
+    type: whl
+    build: uv build --wheel
+    path: .
+    dynamic_version: true
+
 variables:
   catalog:
     description: Unity Catalog catalog for the target. Set per target, never read from the environment.

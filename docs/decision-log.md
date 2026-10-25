@@ -4,6 +4,7 @@ This file records every technical decision taken in this project: what forced it
 
 | ID | Date | Decision | Status |
 |---|---|---|---|
+| DL-010 | 2026-10-25 | Project wheel built by the bundle and installed on serverless | Accepted |
 | DL-009 | 2026-10-23 | Schemas and volumes created by the bootstrap script, not as bundle resources; `landing` schema replaced by `bronze.landing` volume, `ops` added | Accepted |
 | DL-008 | 2026-10-14 | Soda Core replaced by native Lakeflow expectations; quarantine routed to `ops` | Accepted (implementation pending plan approval) |
 | DL-007 | 2026-10-14 | Code receives the catalog via pipeline/job configuration; path constants replaced by UC table names | Accepted (implementation deferred to the producer/pipeline refactor) |
@@ -13,6 +14,40 @@ This file records every technical decision taken in this project: what forced it
 | DL-003 | 2026-10-14 | Attempted to manage catalogs as `resources.catalogs` in the bundle | Superseded by DL-004 |
 | DL-002 | 2026-10-14 | Databricks Asset Bundles with dev/test/prod targets, one catalog per environment | Accepted |
 | DL-001 | before 2026-10-14 | Full migration to Databricks Free Edition, ClickHouse replaced by Delta tables | Accepted |
+
+---
+
+## DL-010 — Project wheel built by the bundle and installed on serverless
+
+**Date:** 2026-10-25 · **Status:** Accepted
+
+**Context.** Code has to reach the jobs as a versioned package, the same artifact CI tested, not as loose files synced into the workspace. The existing top-level package was literally `src` (imports read `from src.producer ...`), and a wheel of `src/` would carry the legacy Airflow, Soda and ClickHouse code along with it.
+
+**Decision.**
+
+- A new package, `src/stock_market`, is the only thing in the wheel (hatchling, `packages = ["src/stock_market"]`). The legacy modules under `src/` stay out.
+- The distribution is renamed to `databricks-stock-market` 0.1.0 (the name and version came from the fork). The distribution name and the import name (`stock_market`) differ on purpose.
+- A bundle `artifacts` entry of `type: whl` builds it with `uv build --wheel` and `dynamic_version: true`. Serverless caches a wheel by its version, so a new deploy with an unchanged version could run old code; the dynamic suffix makes every deploy a distinct version.
+- Jobs run on serverless environment version 6 (Python 3.12.3), the runtime `requires-python` targets.
+- A `stock_market_smoke` job (`python_wheel_task` calling the `stock-market-smoke` entry point), with no schedule, is kept as a permanent deploy and environment check.
+- The producers move into the package in M1 (#11 to #13).
+
+**Evidence (2026-10-25).** Job output in dev:
+
+```
+stock_market 0.1.0+1792957399098910127 on Python 3.12.3 | pandas 2.3.3 | pyarrow 21.0.0
+```
+
+The version suffix proves `dynamic_version` is applied. pandas and pyarrow match the v6 base environment, so installing the wheel did not upgrade the environment underneath it.
+
+**Alternatives considered.**
+- *Package all of `src/`.* Rejected: a generic import name (`src`) and the legacy code shipped in the wheel.
+- *`spark_python_task` with loose files.* Rejected: no version and no declared dependencies, and the code in the workspace can drift from what was tested.
+- *A fixed version without `dynamic_version`.* Rejected because of the serverless wheel cache.
+
+**Consequences.** Deploy runs the build locally, so it depends on `uv` being installed where `bundle deploy` runs. Local tests that use Spark need Java 21 (Temurin, the same as CI). A `.venv` synced by iCloud Drive had its `.pth` files flagged hidden, which Python 3.12 skips, breaking imports; the project moved out of the Desktop folder because of it.
+
+**Content angle.** "Your wheel is a contract: what CI tested is byte-for-byte what serverless runs. A 40-second smoke job proves it." Extra idea: a short post on iCloud hiding `.pth` files and breaking imports on Python 3.12.
 
 ---
 
