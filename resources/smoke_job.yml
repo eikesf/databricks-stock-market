@@ -1,0 +1,16 @@
+resources:
+  jobs:
+    stock_market_smoke:
+      name: stock_market_smoke
+      tasks:
+        - task_key: smoke
+          environment_key: default
+          python_wheel_task:
+            package_name: databricks_stock_market
+            entry_point: stock-market-smoke
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: "6"
+            dependencies:
+              - ../dist/*.whl
